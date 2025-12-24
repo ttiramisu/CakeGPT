@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CakeGPT</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    html,
+    body {
+      height: 100%;
+      font-family: "Inter", sans-serif;
+      background-color: #121212;
+      color: #e5e5e5;
+    }
+
+    #chat::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    #chat::-webkit-scrollbar-thumb {
+      background-color: rgba(100, 100, 100, 0.5);
+      border-radius: 9999px;
+    }
+
+    /* USER MESSAGE */
+    .chat-user {
+      max-width: 70%;
+      padding: 0.9rem 1.3rem;
+      border-radius: 1.8rem 1.8rem 0 1.8rem;
+      background-color: #4b4b4b;
+      color: white;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      align-self: flex-end;
+    }
+
+    .chat-ai {
+      width: 100%;
+      padding: 0.5rem 0;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #e5e5e5;
+    }
+
+    .typing::after {
+      content: "";
+      animation: dots 1.4s infinite;
+    }
+
+    @keyframes dots {
+      0% {
+        content: "";
+      }
+
+      33% {
+        content: ".";
+      }
+
+      66% {
+        content: "..";
+      }
+
+      100% {
+        content: "...";
+      }
+    }
+
+    .starter-btn {
+      background-color: #2c2c2c;
+      padding: 1rem;
+      border-radius: 1.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      text-align: center;
+    }
+
+    .starter-btn:hover {
+      background-color: #3a3a3a;
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+</head>
+
+<body class="flex h-screen overflow-hidden">
+
+  <div class="hidden md:flex flex-col w-64 p-5 bg-[#1c1c1c] space-y-4">
+    <button id="newChatBtn" class="px-4 py-3 rounded-full bg-[#2c2c2c] hover:bg-[#3a3a3a] text-sm">
+      + New chat
+    </button>
+  </div>
+
+  <div class="flex-1 flex flex-col bg-[#1a1a1a]">
+
+    <div class="px-6 py-4 border-b border-[#333] font-semibold">
+      CakeGPT
+    </div>
+
+    <div id="chat" class="flex-1 px-6 py-6 overflow-y-auto flex flex-col space-y-6">
+      <div class="text-gray-500 text-center text-sm">
+        CakeGPT, all in one research assistant for all.
+      </div>
+    </div>
+
+    <div id="starterContainer" class="grid grid-cols-2 gap-4 p-5"></div>
+
+    <div class="border-t border-[#333] p-5">
+      <form id="chatForm" class="flex space-x-3">
+        <input id="message" placeholder="Send a message..."
+          class="flex-1 rounded-full px-5 py-3 bg-[#2c2c2c] border border-[#444] focus:outline-none" />
+        <button class="px-5 py-3 rounded-full bg-[#4b4b4b] hover:bg-[#5a5a5a]">
+          <span class="material-icons">send</span>
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("message");
+    const starters = document.getElementById("starterContainer");
+    const newChatBtn = document.getElementById("newChatBtn");
+
+    let hasInteracted = false;
+
+    const starterPrompts = [
+      "Explain quantum computing simply",
+      "Give me productivity tips",
+      "Write a short poem",
+      "Explain relativity like I'm 12"
+    ];
+
+    function scrollBottom() {
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function showStarters() {
+      starters.innerHTML = "";
+      starters.style.display = "grid";
+      starterPrompts.forEach(text => {
+        const btn = document.createElement("div");
+        btn.className = "starter-btn";
+        btn.textContent = text;
+        btn.onclick = () => {
+          input.value = text;
+          input.focus();
+          hideStarters();
+        };
+        starters.appendChild(btn);
+      });
+    }
+
+    function hideStarters() {
+      if (!hasInteracted) {
+        starters.style.display = "none";
+        hasInteracted = true;
+      }
+    }
+
+    showStarters();
+
+    form.onsubmit = e => {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      hideStarters();
+
+      const user = document.createElement("div");
+      user.className = "chat-user";
+      user.textContent = msg;
+      chat.appendChild(user);
+      scrollBottom();
+
+      input.value = "";
+
+      const typing = document.createElement("div");
+      typing.className = "chat-ai typing";
+      typing.textContent = "CakeGPT is typing";
+      chat.appendChild(typing);
+      scrollBottom();
+
+      setTimeout(() => {
+        typing.classList.remove("typing");
+        typing.textContent =
+          "Sorry, something went wrong. Please try again.";
+        scrollBottom();
+      }, 1400);
+    };
+
+    newChatBtn.onclick = () => {
+      chat.innerHTML = `
+        <div class="text-gray-500 text-center text-sm">
+          CakeGPT, all in one research assistant for all.
+        </div>`;
+      hasInteracted = false;
+      showStarters();
+    };
+  </script>
+
+</body>
+
+</html>
