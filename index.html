@@ -1,210 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
+  <title>AskAI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CakeGPT</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    html,
+    :root {
+      --bg: #0f0f14;
+      --panel: #17171f;
+      --user: #2563eb;
+      --ai: #2a2a38;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
     body {
-      height: 100%;
-      font-family: "Inter", sans-serif;
-      background-color: #121212;
-      color: #e5e5e5;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      height: 100vh;
     }
 
-    #chat::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    #chat::-webkit-scrollbar-thumb {
-      background-color: rgba(100, 100, 100, 0.5);
-      border-radius: 9999px;
-    }
-
-    /* USER MESSAGE */
-    .chat-user {
-      max-width: 70%;
-      padding: 0.9rem 1.3rem;
-      border-radius: 1.8rem 1.8rem 0 1.8rem;
-      background-color: #4b4b4b;
-      color: white;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      align-self: flex-end;
-    }
-
-    .chat-ai {
+    .app {
       width: 100%;
-      padding: 0.5rem 0;
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: #e5e5e5;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
     }
 
-    .typing::after {
+    header {
+      padding: 16px;
+      border-bottom: 1px solid #262633;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .chat {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bubble {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      line-height: 1.4;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .user {
+      background: var(--user);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai {
+      background: var(--ai);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .typing {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .dots::after {
       content: "";
       animation: dots 1.4s infinite;
     }
 
     @keyframes dots {
-      0% {
-        content: "";
-      }
-
-      33% {
-        content: ".";
-      }
-
-      66% {
-        content: "..";
-      }
-
-      100% {
-        content: "...";
-      }
+      0% { content: ""; }
+      33% { content: "."; }
+      66% { content: ".."; }
+      100% { content: "..."; }
     }
 
-    .starter-btn {
-      background-color: #2c2c2c;
-      padding: 1rem;
-      border-radius: 1.5rem;
-      font-size: 0.875rem;
+    .input-area {
+      border-top: 1px solid #262633;
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      background: var(--panel);
+    }
+
+    input {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      background: #0b0b10;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: none;
+      background: var(--user);
+      color: white;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
-      text-align: center;
     }
 
-    .starter-btn:hover {
-      background-color: #3a3a3a;
+    button:hover {
+      opacity: 0.9;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
-
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 </head>
+<body>
 
-<body class="flex h-screen overflow-hidden">
+<div class="app">
+  <header>AskAI</header>
 
-  <div class="hidden md:flex flex-col w-64 p-5 bg-[#1c1c1c] space-y-4">
-    <button id="newChatBtn" class="px-4 py-3 rounded-full bg-[#2c2c2c] hover:bg-[#3a3a3a] text-sm">
-      + New chat
-    </button>
+  <div class="chat" id="chat"></div>
+
+  <div class="input-area">
+    <input id="input" placeholder="Ask a question..." autocomplete="off" />
+    <button onclick="send()">Send</button>
   </div>
+</div>
 
-  <div class="flex-1 flex flex-col bg-[#1a1a1a]">
+<script>
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
 
-    <div class="px-6 py-4 border-b border-[#333] font-semibold">
-      CakeGPT
-    </div>
+  const names = [
+    "Alex Turner", "Jordan Lee", "Sam Whitaker",
+    "Morgan Hayes", "Taylor Brooks",
+    "Chris Nolan", "Jamie Carter"
+  ];
 
-    <div id="chat" class="flex-1 px-6 py-6 overflow-y-auto flex flex-col space-y-6">
-      <div class="text-gray-500 text-center text-sm">
-        CakeGPT, all in one research assistant for all.
-      </div>
-    </div>
+  const whyAnswers = [
+    "Because that's how the system was designed.",
+    "Due to a combination of historical and technical reasons.",
+    "Mostly because it optimizes efficiency over simplicity.",
+    "Because changing it would cause more problems than it solves."
+  ];
 
-    <div id="starterContainer" class="grid grid-cols-2 gap-4 p-5"></div>
+  const whatAnswers = [
+    "It's a concept that depends heavily on context.",
+    "It's generally understood as a trade-off between multiple factors.",
+    "It's something that exists to solve a specific problem.",
+    "It's a simplified representation of a more complex idea."
+  ];
 
-    <div class="border-t border-[#333] p-5">
-      <form id="chatForm" class="flex space-x-3">
-        <input id="message" placeholder="Send a message..."
-          class="flex-1 rounded-full px-5 py-3 bg-[#2c2c2c] border border-[#444] focus:outline-none" />
-        <button class="px-5 py-3 rounded-full bg-[#4b4b4b] hover:bg-[#5a5a5a]">
-          <span class="material-icons">send</span>
-        </button>
-      </form>
-    </div>
+  const hallucinations = [
+    "This was formally standardized in 2014 following internal review.",
+    "Most experts attribute this to the Kessler–Rao effect.",
+    "Early implementations behaved differently before the 2018 revision.",
+    "The original system was quietly deprecated due to edge cases.",
+    "This behavior was first documented during private academic trials.",
+    "Internally, this is referred to as the secondary resolution phase."
+  ];
 
-  </div>
+  function addBubble(text, type) {
+    const div = document.createElement("div");
+    div.className = `bubble ${type}`;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
 
-  <script>
-    const chat = document.getElementById("chat");
-    const form = document.getElementById("chatForm");
-    const input = document.getElementById("message");
-    const starters = document.getElementById("starterContainer");
-    const newChatBtn = document.getElementById("newChatBtn");
+  function showTyping() {
+    const div = document.createElement("div");
+    div.className = "bubble ai typing";
+    div.innerHTML = `<span class="dots">AI is typing</span>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
 
-    let hasInteracted = false;
+  function maybeHallucinate(text) {
+    if (Math.random() < 0.15) {
+      const h = hallucinations[Math.floor(Math.random() * hallucinations.length)];
+      return text + " " + h;
+    }
+    return text;
+  }
 
-    const starterPrompts = [
-      "Explain quantum computing simply",
-      "Give me productivity tips",
-      "Write a short poem",
-      "Explain relativity like I'm 12"
-    ];
+  function generateAnswer(question) {
+    const q = question.toLowerCase();
 
-    function scrollBottom() {
-      chat.scrollTop = chat.scrollHeight;
+    if (!question.endsWith("?")) {
+      return "Questions end with '?', buddy.";
     }
 
-    function showStarters() {
-      starters.innerHTML = "";
-      starters.style.display = "grid";
-      starterPrompts.forEach(text => {
-        const btn = document.createElement("div");
-        btn.className = "starter-btn";
-        btn.textContent = text;
-        btn.onclick = () => {
-          input.value = text;
-          input.focus();
-          hideStarters();
-        };
-        starters.appendChild(btn);
-      });
+    let answer;
+
+    if (q.startsWith("who")) {
+      answer = names[Math.floor(Math.random() * names.length)];
+    }
+    else if (
+      q.startsWith("is") || q.startsWith("are") ||
+      q.startsWith("do") || q.startsWith("does") ||
+      q.startsWith("can") || q.startsWith("will")
+    ) {
+      answer = Math.random() < 0.5 ? "Yes." : "No.";
+    }
+    else if (q.startsWith("why")) {
+      answer = whyAnswers[Math.floor(Math.random() * whyAnswers.length)];
+    }
+    else if (q.startsWith("what")) {
+      answer = whatAnswers[Math.floor(Math.random() * whatAnswers.length)];
+    }
+    else {
+      answer = "That’s a complex question. The answer depends on perspective.";
     }
 
-    function hideStarters() {
-      if (!hasInteracted) {
-        starters.style.display = "none";
-        hasInteracted = true;
-      }
-    }
+    return maybeHallucinate(answer);
+  }
 
-    showStarters();
+  function send() {
+    const question = input.value.trim();
+    if (!question) return;
 
-    form.onsubmit = e => {
-      e.preventDefault();
-      const msg = input.value.trim();
-      if (!msg) return;
+    addBubble(question, "user");
+    input.value = "";
 
-      hideStarters();
+    const typing = showTyping();
 
-      const user = document.createElement("div");
-      user.className = "chat-user";
-      user.textContent = msg;
-      chat.appendChild(user);
-      scrollBottom();
+    setTimeout(() => {
+      typing.remove();
+      addBubble(generateAnswer(question), "ai");
+    }, 900);
+  }
 
-      input.value = "";
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") send();
+  });
 
-      const typing = document.createElement("div");
-      typing.className = "chat-ai typing";
-      typing.textContent = "CakeGPT is typing";
-      chat.appendChild(typing);
-      scrollBottom();
-
-      setTimeout(() => {
-        typing.classList.remove("typing");
-        typing.textContent =
-          "Sorry, something went wrong. Please try again.";
-        scrollBottom();
-      }, 1400);
-    };
-
-    newChatBtn.onclick = () => {
-      chat.innerHTML = `
-        <div class="text-gray-500 text-center text-sm">
-          CakeGPT, all in one research assistant for all.
-        </div>`;
-      hasInteracted = false;
-      showStarters();
-    };
-  </script>
+  window.onload = () => {
+    addBubble(
+      "Hello. I am AskAI — an experimental reasoning model. Ask me a properly formatted question, and I will provide the most appropriate answer.",
+      "ai"
+    );
+  };
+</script>
 
 </body>
-
 </html>
